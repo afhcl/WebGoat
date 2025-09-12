@@ -17,6 +17,11 @@ import java.net.*;
 import java.io.*;
 import java.nio.channels.*;
 import java.util.Properties;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.io.IOException;
 
 public class MavenWrapperDownloader {
 
@@ -52,25 +57,20 @@ public class MavenWrapperDownloader {
 
         // If the maven-wrapper.properties exists, read it and check if it contains a custom
         // wrapperUrl parameter.
-        File mavenWrapperPropertyFile = new File(baseDirectory, MAVEN_WRAPPER_PROPERTIES_PATH);
+        Path mavenWrapperPropertyFilePath = Paths.get(baseDirectory.getAbsolutePath(), MAVEN_WRAPPER_PROPERTIES_PATH);
         String url = DEFAULT_DOWNLOAD_URL;
-        if(mavenWrapperPropertyFile.exists()) {
-            FileInputStream mavenWrapperPropertyFileInputStream = null;
-            try {
-                mavenWrapperPropertyFileInputStream = new FileInputStream(mavenWrapperPropertyFile);
+        if(Files.exists(mavenWrapperPropertyFilePath)) {
+            Path baseDirPath = Paths.get(baseDirectory.getAbsolutePath()).normalize();
+            Path normalizedFilePath = mavenWrapperPropertyFilePath.normalize();
+            if (!normalizedFilePath.startsWith(baseDirPath)) {
+                throw new IOException("Potential path traversal attempt detected: " + normalizedFilePath);
+            }
+            try (InputStream mavenWrapperPropertyFileInputStream = Files.newInputStream(mavenWrapperPropertyFilePath)) {
                 Properties mavenWrapperProperties = new Properties();
                 mavenWrapperProperties.load(mavenWrapperPropertyFileInputStream);
                 url = mavenWrapperProperties.getProperty(PROPERTY_NAME_WRAPPER_URL, url);
             } catch (IOException e) {
                 System.out.println("- ERROR loading '" + MAVEN_WRAPPER_PROPERTIES_PATH + "'");
-            } finally {
-                try {
-                    if(mavenWrapperPropertyFileInputStream != null) {
-                        mavenWrapperPropertyFileInputStream.close();
-                    }
-                } catch (IOException e) {
-                    // Ignore ...
-                }
             }
         }
         System.out.println("- Downloading from: " + url);

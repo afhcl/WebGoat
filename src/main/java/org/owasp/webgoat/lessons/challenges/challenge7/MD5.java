@@ -8,7 +8,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * MD5 hash generator. More information about this class is available from <a target="_top" href=
@@ -50,7 +51,8 @@ public class MD5 {
     } else {
       for (String element : args) {
         try {
-          System.out.println(MD5.getHashString(new File(element)) + " " + element);
+          Path path = Paths.get(element).normalize();
+          System.out.println(MD5.getHashString(path.toFile()) + " " + element);
         } catch (IOException x) {
           System.err.println(x.getMessage());
         }
@@ -171,27 +173,31 @@ public class MD5 {
   }
 
   /**
-   * Gets the MD5 hash of the given file.
-   *
-   * @param f file array for which an MD5 hash is desired.
-   * @return 32-character hex representation the data's MD5 hash.
-   * @throws IOException if an I/O error occurs.
-   * @since ostermillerutils 1.00.00
-   */
-  public static String getHashString(File f) throws IOException {
-    String hash = null;
-    try (InputStream is = new FileInputStream(f)) {
-      hash = getHashString(is);
-    }
-    return hash;
-  }
+  * Gets the MD5 hash of the given file.
+  *
+  * @param f file array for which an MD5 hash is desired.
+  * @return 32-character hex representation the data's MD5 hash.
+  * @throws IOException if an I/O error occurs.
+  * @since ostermillerutils 1.00.00
+  */
+ public static String getHashString(File f) throws IOException {
+   String hash = null;
+   File baseDir = new File("/trusted/base/directory").getCanonicalFile();
+   if (!f.getCanonicalFile().toPath().startsWith(baseDir.toPath())) {
+     throw new SecurityException("Attempted path traversal attack detected for file: " + f);
+   }
+   try (InputStream is = new FileInputStream(f)) {
+     hash = getHashString(is);
+   }
+   return hash;
+ }
 
-  /**
-   * Gets the MD5 hash of the given String. The string is converted to bytes using the current
-   * platform's default character encoding.
-   *
-   * @param s String for which an MD5 hash is desired.
-   * @return Array of 16 bytes, the hash of all updated bytes.
+ /**
+  * Gets the MD5 hash of the given String. The string is converted to bytes using the current
+  * platform's default character encoding.
+  *
+  * @param s String for which an MD5 hash is desired.
+  * @return Array of 16 bytes, the hash of all updated bytes.
    * @since ostermillerutils 1.00.00
    */
   public static byte[] getHash(String s) {
